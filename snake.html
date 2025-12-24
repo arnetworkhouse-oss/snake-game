@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Snake Pro Elite | Universal Support</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap');
+
+        :root {
+            --neon-cyan: #00f2ff;
+            --neon-pink: #ff0055;
+            --bg-dark: #020205;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: var(--bg-dark);
+            background-image: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #020205 100%);
+            color: white;
+            font-family: 'Rajdhani', sans-serif;
+            flex-direction: column;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        /* Setup Screen */
+        #game-setup {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 2, 5, 0.95);
+            backdrop-filter: blur(15px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .setup-card {
+            background: var(--glass);
+            padding: 30px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            text-align: center;
+            width: 90%;
+            max-width: 350px;
+        }
+
+        h1 { font-family: 'Orbitron'; color: var(--neon-cyan); letter-spacing: 4px; font-size: 24px; margin-bottom: 25px; text-shadow: 0 0 10px var(--neon-cyan); }
+
+        input, select {
+            background: #000; border: 1px solid #333; color: white;
+            padding: 14px; margin: 10px 0; font-family: 'Orbitron'; border-radius: 8px;
+            width: 100%; box-sizing: border-box; text-align: center; font-size: 14px;
+        }
+
+        #startBtn {
+            background: linear-gradient(45deg, var(--neon-cyan), #0066ff); 
+            color: #000; padding: 16px; border: none; cursor: pointer; 
+            margin-top: 15px; font-family: 'Orbitron'; font-weight: bold; 
+            border-radius: 8px; width: 100%; letter-spacing: 1px;
+        }
+
+        /* Layout */
+        .game-layout {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            gap: 15px;
+        }
+
+        .status-pane {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .stat-box {
+            background: var(--glass);
+            border-left: 3px solid var(--neon-cyan);
+            padding: 10px 15px;
+            min-width: 100px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .label { font-size: 10px; text-transform: uppercase; color: #888; }
+        .value { font-size: 18px; color: white; font-weight: bold; font-family: 'Orbitron'; }
+
+        .canvas-wrapper {
+            position: relative;
+            background: #000;
+            border: 2px solid #222;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            width: 90vw;
+            height: 90vw;
+            max-width: 400px;
+            max-height: 400px;
+        }
+
+        canvas { width: 100%; height: 100%; display: block; }
+
+        /* Controls (Visible on mobile, usable on PC) */
+        .controller {
+            margin-top: 20px;
+            display: grid;
+            grid-template-areas: ". up ." "left down right";
+            gap: 12px;
+            padding-bottom: 20px;
+        }
+
+        .control-btn {
+            width: 65px; height: 65px; background: rgba(255,255,255,0.05);
+            border: 1px solid #444; border-radius: 50%; color: var(--neon-cyan);
+            font-size: 24px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .control-btn:active, .control-btn.active { background: var(--neon-cyan); color: #000; }
+        .up { grid-area: up; } .left { grid-area: left; } .down { grid-area: down; } .right { grid-area: right; }
+    </style>
+</head>
+<body>
+
+    <div id="game-setup">
+        <div class="setup-card">
+            <h1>SNAKE PRO</h1>
+            <input type="text" id="playerName" placeholder="CODENAME" maxlength="12">
+            <select id="speedLevel">
+                <option value="1">LEVEL 01</option>
+                <option value="3">LEVEL 03</option>
+                <option value="6">LEVEL 06</option>
+                <option value="10">LEVEL 10</option>
+            </select>
+            <button id="startBtn">START MISSION</button>
+            <p style="font-size: 10px; color: #555; margin-top: 15px;">PC: Use Arrows or WASD</p>
+        </div>
+    </div>
+
+    <div class="game-layout">
+        <div class="status-pane">
+            <div class="stat-box"><div class="label">Agent</div><div id="display-name" class="value">---</div></div>
+            <div class="stat-box"><div class="label">Score</div><div id="display-score" class="value">000</div></div>
+        </div>
+
+        <div class="canvas-wrapper">
+            <canvas id="snakeGame" width="400" height="400"></canvas>
+        </div>
+    </div>
+
+    <div class="controller">
+        <button id="btn-UP" class="control-btn up" onpointerdown="changeDir('UP')">▲</button>
+        <button id="btn-LEFT" class="control-btn left" onpointerdown="changeDir('LEFT')">◀</button>
+        <button id="btn-DOWN" class="control-btn down" onpointerdown="changeDir('DOWN')">▼</button>
+        <button id="btn-RIGHT" class="control-btn right" onpointerdown="changeDir('RIGHT')">▶</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("snakeGame");
+        const ctx = canvas.getContext("2d");
+        const box = 20;
+
+        let snake, food, d, nextD, score, pointsPerFood, gameInterval;
+
+        // PC Keyboard Support
+        document.addEventListener("keydown", (e) => {
+            const key = e.key.toUpperCase();
+            if (key === "ARROWUP" || key === "W") changeDir("UP");
+            if (key === "ARROWDOWN" || key === "S") changeDir("DOWN");
+            if (key === "ARROWLEFT" || key === "A") changeDir("LEFT");
+            if (key === "ARROWRIGHT" || key === "D") changeDir("RIGHT");
+            
+            // Visual feedback for keys
+            const btn = document.getElementById("btn-" + nextD);
+            if (btn) {
+                btn.classList.add("active");
+                setTimeout(() => btn.classList.remove("active"), 100);
+            }
+        });
+
+        document.getElementById("startBtn").addEventListener("click", () => {
+            const name = document.getElementById("playerName").value || "AGENT";
+            const level = parseInt(document.getElementById("speedLevel").value);
+            document.getElementById("display-name").innerText = name.toUpperCase();
+            document.getElementById("game-setup").style.display = "none";
+            pointsPerFood = level;
+            let speed = 140 - (level * 10);
+            initGame();
+            if(gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(draw, speed);
+        });
+
+        function initGame() {
+            snake = [{x: 10 * box, y: 10 * box}, {x: 9 * box, y: 10 * box}];
+            generateFood();
+            d = "RIGHT"; nextD = "RIGHT"; score = 0; updateUI();
+        }
+
+        function generateFood() {
+            food = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box };
+        }
+
+        function updateUI() { document.getElementById("display-score").innerText = score.toString().padStart(3, '0'); }
+
+        function changeDir(dir) {
+            if (dir == "LEFT" && d != "RIGHT") nextD = "LEFT";
+            if (dir == "UP" && d != "DOWN") nextD = "UP";
+            if (dir == "RIGHT" && d != "LEFT") nextD = "RIGHT";
+            if (dir == "DOWN" && d != "UP") nextD = "DOWN";
+        }
+
+        function draw() {
+            d = nextD;
+            ctx.fillStyle = "#020205";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Food
+            ctx.fillStyle = "#ff0055";
+            ctx.shadowBlur = 15; ctx.shadowColor = "#ff0055";
+            ctx.beginPath(); ctx.arc(food.x + box/2, food.y + box/2, 7, 0, Math.PI * 2); ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Snake
+            snake.forEach((part, i) => {
+                ctx.fillStyle = (i === 0) ? "#00f2ff" : "rgba(0, 242, 255, 0.6)";
+                ctx.fillRect(part.x + 1, part.y + 1, box - 2, box - 2);
+            });
+
+            let snakeX = snake[0].x;
+            let snakeY = snake[0].y;
+            if (d == "LEFT") snakeX -= box;
+            if (d == "UP") snakeY -= box;
+            if (d == "RIGHT") snakeX += box;
+            if (d == "DOWN") snakeY += box;
+
+            if (snakeX < 0) snakeX = canvas.width - box;
+            else if (snakeX >= canvas.width) snakeX = 0;
+            if (snakeY < 0) snakeY = canvas.height - box;
+            else if (snakeY >= canvas.height) snakeY = 0;
+
+            if (snakeX == food.x && snakeY == food.y) {
+                score += pointsPerFood;
+                updateUI();
+                generateFood();
+            } else {
+                snake.pop();
+            }
+
+            let newHead = { x: snakeX, y: snakeY };
+            for (let i = 0; i < snake.length; i++) {
+                if (newHead.x == snake[i].x && newHead.y == snake[i].y) {
+                    clearInterval(gameInterval);
+                    alert("MISSION FAILED! Score: " + score);
+                    location.reload();
+                }
+            }
+            snake.unshift(newHead);
+        }
+    </script>
+</body>
+</html>
